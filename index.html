@@ -170,7 +170,8 @@
 </div>
 
 <!-- Shuffle -->
-<button class="btn btn-pink" onclick="shuffle()" style="margin-bottom:14px">🎲 ランダム席決め</button>
+<button class="btn btn-pink" onclick="shuffle()" style="margin-bottom:8px">🎲 ランダム席決め</button>
+<button onclick="clearAll()" style="width:100%;padding:10px 0;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:rgba(255,255,255,0.45);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;">🗑️ リセット</button>
 
 <!-- People Pool -->
 <div class="panel">
@@ -374,11 +375,57 @@ document.addEventListener('touchend', e => {
   touchDragging = null;
 }, { passive: false });
 
+// ===== LocalStorage 保存/読み込み =====
+function saveData() {
+  try {
+    localStorage.setItem('nomikai_tables', JSON.stringify(tables));
+    localStorage.setItem('nomikai_people', JSON.stringify(people));
+    localStorage.setItem('nomikai_colorMap', JSON.stringify(nameColorMap));
+    localStorage.setItem('nomikai_colorCount', JSON.stringify(colorUsageCount));
+  } catch(e) {}
+}
+
+function loadData() {
+  try {
+    const t = localStorage.getItem('nomikai_tables');
+    const p = localStorage.getItem('nomikai_people');
+    const cm = localStorage.getItem('nomikai_colorMap');
+    const cc = localStorage.getItem('nomikai_colorCount');
+    if (t) tables = JSON.parse(t);
+    if (p) people = JSON.parse(p);
+    if (cm) Object.assign(nameColorMap, JSON.parse(cm));
+    if (cc) colorUsageCount = JSON.parse(cc);
+  } catch(e) {}
+}
+
+function clearAll() {
+  if (!confirm('全データをリセットしますか？')) return;
+  tables = []; people = [];
+  Object.keys(nameColorMap).forEach(k => delete nameColorMap[k]);
+  colorUsageCount = Array(COLORS.length).fill(0);
+  localStorage.removeItem('nomikai_tables');
+  localStorage.removeItem('nomikai_people');
+  localStorage.removeItem('nomikai_colorMap');
+  localStorage.removeItem('nomikai_colorCount');
+  render();
+}
+
+let toastTimer = null;
+function showSaveToast() {
+  const toast = document.getElementById('saveToast');
+  if (!toast) return;
+  toast.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 1500);
+}
+
 // ===== Render =====
 function render() {
   renderPool();
   renderTables();
   updateStats();
+  saveData();
+  showSaveToast();
 }
 
 function renderPool() {
@@ -509,7 +556,8 @@ function updateStats() {
 // ===== QR Code (pure JS, no library) =====
 // Simple URL-based QR via Google Charts API (no external JS dependency)
 window.addEventListener('load', () => {
-  // Only show QR if accessed via file:// - skip if local
+  loadData();
+  render();
   const url = location.href;
   if (url.startsWith('http')) {
     generateQR(url);
@@ -532,6 +580,15 @@ function generateQR(url) {
   img.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encoded}`;
 }
 </script>
+
+<!-- Save toast -->
+<div id="saveToast" style="
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(29,209,161,0.92);color:#fff;
+  padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;
+  pointer-events:none;opacity:0;transition:opacity 0.3s;z-index:9999;
+  white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.3);
+">💾 自動保存しました</div>
 
 <!-- How to use hint -->
 <div style="margin-top:28px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:16px;">
