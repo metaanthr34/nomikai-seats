@@ -1,7 +1,7 @@
 {
-  "name": "飲み会 席決めアプリ",
+  "name": "グループ席決めアプリ",
   "short_name": "席決め",
-  "description": "飲み会の席をかんたんに決めるアプリ",
+  "description": "グループワークや飲み会の席をかんたんに決めるアプリ",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f0c29",
