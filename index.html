@@ -60,16 +60,16 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
 .chip { border-radius:20px; padding:6px 12px; font-size:13px; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.4); display:flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(0,0,0,0.2); cursor:grab; user-select:none; touch-action:none; }
 .chip-x { cursor:pointer; opacity:0.7; font-size:11px; }
 .tables-area { display:flex; flex-direction:column; gap:14px; }
-.table-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:18px; padding:16px; }
+.table-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:18px; padding:16px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
 .table-header { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
 .table-name { font-weight:800; font-size:14px; background:linear-gradient(135deg,#FFD700,#FF6B6B); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .table-name.group-style { background:linear-gradient(135deg,#48DBFB,#5F27CD); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .table-size { font-size:11px; color:rgba(255,255,255,0.4); font-family:monospace; }
 .table-del { margin-left:auto; background:#FF6B6B; border:none; border-radius:50%; width:24px; height:24px; color:#fff; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.table-layout { display:flex; flex-direction:column; gap:6px; }
-.table-middle-row { display:flex; align-items:center; gap:6px; justify-content:center; }
+.table-layout { display:flex; flex-direction:column; gap:6px; min-width:fit-content; }
+.table-middle-row { display:flex; align-items:center; gap:6px; justify-content:center; flex-wrap:nowrap; }
 .table-surface { background:linear-gradient(135deg,rgba(139,90,43,0.6),rgba(101,67,33,0.8)); border-radius:8px; height:58px; flex:1; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1); font-size:10px; color:rgba(255,255,255,0.4); letter-spacing:2px; min-width:60px; }
-.seats-row { display:flex; gap:6px; justify-content:center; }
+.seats-row { display:flex; gap:6px; justify-content:center; flex-wrap:nowrap; }
 .seat-end { width:52px; height:58px; border-radius:10px; border:2px dashed rgba(255,215,0,0.5); background:rgba(255,215,0,0.05); display:flex; align-items:center; justify-content:center; position:relative; transition:all 0.18s; cursor:default; user-select:none; box-shadow:0 0 10px rgba(255,215,0,0.2); flex-shrink:0; }
 .seat-end.occupied { border:2px solid rgba(255,215,0,0.7); box-shadow:0 0 14px rgba(255,215,0,0.4); cursor:grab; }
 .seat-end.drag-over { border-color:#FFD700; background:rgba(255,215,0,0.2); transform:scale(1.05); }
@@ -309,16 +309,17 @@ function renderTables(){
     hdr.appendChild(ns);hdr.appendChild(ss);hdr.appendChild(db);card.appendChild(hdr);
     if(isGroup){
       const g=document.createElement('div');g.className='group-seats-grid';
-      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)g.appendChild(makeSeat(t,ti,r,c));
+      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)g.appendChild(makeSeat(t,ti,r,c,72));
       card.appendChild(g);
     } else {
+      const ss=calcSeatSize(cols);
       const layout=document.createElement('div');layout.className='table-layout';
       const topRow=document.createElement('div');topRow.className='seats-row';
-      for(let c=0;c<cols;c++)topRow.appendChild(makeSeat(t,ti,0,c));
+      for(let c=0;c<cols;c++)topRow.appendChild(makeSeat(t,ti,0,c,ss));
       layout.appendChild(topRow);
       for(let r=1;r<rows-1;r++){
         const row=document.createElement('div');row.className='seats-row';
-        for(let c=0;c<cols;c++)row.appendChild(makeSeat(t,ti,r,c));
+        for(let c=0;c<cols;c++)row.appendChild(makeSeat(t,ti,r,c,ss));
         layout.appendChild(row);
       }
       const midRow=document.createElement('div');midRow.className='table-middle-row';
@@ -329,7 +330,7 @@ function renderTables(){
       layout.appendChild(midRow);
       if(rows>=2){
         const botRow=document.createElement('div');botRow.className='seats-row';
-        for(let c=0;c<cols;c++)botRow.appendChild(makeSeat(t,ti,rows-1,c));
+        for(let c=0;c<cols;c++)botRow.appendChild(makeSeat(t,ti,rows-1,c,ss));
         layout.appendChild(botRow);
       }
       card.appendChild(layout);
@@ -337,10 +338,24 @@ function renderTables(){
     area.appendChild(card);
   });
 }
-function makeSeat(t,ti,r,c){
+function calcSeatSize(cols){
+  // カード内の利用可能幅を推定（画面幅 - padding*2 - card padding*2）
+  const available = Math.min(window.innerWidth, 600) - 24 - 32;
+  // 端席がある場合は2席分(52px*2+gap*2)引く
+  const endW = birthdayOn() ? (52*2 + 6*2) : 0;
+  const gapTotal = (cols - 1) * 6;
+  const maxW = Math.floor((available - endW - gapTotal) / cols);
+  // 最小44px、最大72px
+  return Math.max(44, Math.min(72, maxW));
+}
+function makeSeat(t,ti,r,c,seatSize){
+  seatSize = seatSize || 72;
   const name=t.seats[r][c],sd=document.createElement('div');
   sd.className='seat'+(name?' occupied':'');
   sd.dataset.seat='';sd.dataset.ti=ti;sd.dataset.r=r;sd.dataset.c=c;
+  sd.style.width=seatSize+'px';
+  sd.style.height=Math.round(seatSize*0.8+10)+'px';
+  sd.style.fontSize=seatSize<56?'9px':'11px';
   sd.style.background=name?getColor(name)+'cc':'rgba(255,255,255,0.06)';
   sd.style.border=name?'2px solid transparent':'2px dashed rgba(255,255,255,0.25)';
   sd.addEventListener('dragover',e=>{e.preventDefault();sd.classList.add('drag-over');});
