@@ -70,7 +70,7 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
 .table-middle-row { display:flex; align-items:center; gap:6px; justify-content:center; flex-wrap:nowrap; }
 .table-surface { background:linear-gradient(135deg,rgba(139,90,43,0.6),rgba(101,67,33,0.8)); border-radius:8px; height:58px; flex:1; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1); font-size:10px; color:rgba(255,255,255,0.4); letter-spacing:2px; min-width:60px; }
 .seats-row { display:flex; gap:6px; justify-content:center; flex-wrap:nowrap; }
-.seat-end { width:52px; height:58px; border-radius:10px; border:2px dashed rgba(255,215,0,0.5); background:rgba(255,215,0,0.05); display:flex; align-items:center; justify-content:center; position:relative; transition:all 0.18s; cursor:default; user-select:none; box-shadow:0 0 10px rgba(255,215,0,0.2); flex-shrink:0; }
+.seat-end { width:52px; height:58px; border-radius:10px; border:2px dashed rgba(255,215,0,0.5); background:rgba(255,215,0,0.05); display:flex; align-items:center; justify-content:center; position:relative; transition:all 0.18s; cursor:default; user-select:none; box-shadow:0 0 10px rgba(255,215,0,0.2); flex-shrink:0; margin:0 8px; }
 .seat-end.occupied { border:2px solid rgba(255,215,0,0.7); box-shadow:0 0 14px rgba(255,215,0,0.4); cursor:grab; }
 .seat-end.drag-over { border-color:#FFD700; background:rgba(255,215,0,0.2); transform:scale(1.05); }
 .end-crown { position:absolute; top:-10px; left:50%; transform:translateX(-50%); font-size:12px; }
@@ -92,14 +92,26 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
 <div class="app-icon" id="appIcon">👥</div>
 <h1 id="appTitle" class="group">グループ席決めアプリ</h1>
 <div class="subtitle">参加者 0人 / 席 0席 / 着席済 0人</div>
-<div class="panel">
-  <div class="panel-title gold" id="tableAddTitle">＋ テーブル追加</div>
+<!-- 飲み会モード：テーブル追加 -->
+<div class="panel" id="nomikaiTablePanel">
+  <div class="panel-title gold">＋ テーブル追加</div>
   <div class="row">
     <div class="col"><label>行数（縦）</label><input type="number" id="newRows" value="2" min="1" max="10"></div>
     <span style="color:rgba(255,255,255,0.4);margin-top:18px">×</span>
     <div class="col"><label>列数（横）</label><input type="number" id="newCols" value="4" min="1" max="10"></div>
   </div>
-  <button class="btn btn-gold" id="addTableBtn" onclick="addTable()">テーブルを追加</button>
+  <button class="btn btn-gold" onclick="addTable()">テーブルを追加</button>
+</div>
+
+<!-- グループワークモード：人数÷グループ数 -->
+<div class="panel" id="groupGenPanel" style="display:none">
+  <div class="panel-title" style="color:#48DBFB">👥 グループを自動生成</div>
+  <div class="row" style="margin-bottom:10px">
+    <div class="col"><label>グループ数</label><input type="number" id="groupCount" value="4" min="1" max="20" oninput="updateGroupHint()"></div>
+    <div class="col"><label>1グループの人数</label><input type="number" id="groupSize" value="4" min="1" max="20" oninput="updateGroupHint()"></div>
+  </div>
+  <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:10px" id="groupHint">合計 16席 が作られます</div>
+  <button class="btn btn-group" onclick="generateGroups()">グループを生成</button>
 </div>
 <div class="panel" id="birthdayPanel">
   <div class="toggle-row">
@@ -151,9 +163,29 @@ function setMode(mode){
   t.textContent=mode==='nomikai'?'飲み会 席決めアプリ':'グループワーク 席決め';
   t.className=mode==='nomikai'?'nomikai':'group';
   document.getElementById('birthdayPanel').style.display=mode==='nomikai'?'':'none';
-  document.getElementById('tableAddTitle').textContent=mode==='nomikai'?'＋ テーブル追加':'＋ グループ追加';
-  document.getElementById('addTableBtn').textContent=mode==='nomikai'?'テーブルを追加':'グループを追加';
-  document.getElementById('addTableBtn').className=mode==='nomikai'?'btn btn-gold':'btn btn-group';
+  document.getElementById('nomikaiTablePanel').style.display=mode==='nomikai'?'':'none';
+  document.getElementById('groupGenPanel').style.display=mode==='group'?'':'none';
+  render();
+}
+
+function updateGroupHint(){
+  const count=Math.max(1,+document.getElementById('groupCount').value||4);
+  const size=Math.max(1,+document.getElementById('groupSize').value||4);
+  document.getElementById('groupHint').textContent=`合計 ${count*size}席 が作られます`;
+}
+
+function generateGroups(){
+  const count=Math.max(1,Math.min(20,+document.getElementById('groupCount').value||4));
+  const size=Math.max(1,Math.min(20,+document.getElementById('groupSize').value||4));
+  // 既存のgroupテーブルを一旦全員プールに戻してから再生成
+  tables.filter(t=>t.mode==='group').forEach(t=>{
+    [...t.seats.flat(),...t.endSeats].filter(Boolean).forEach(n=>people.push(n));
+  });
+  tables=tables.filter(t=>t.mode!=='group');
+  // グループ生成：1行×sizeの席
+  for(let i=0;i<count;i++){
+    tables.push({rows:1,cols:size,seats:[Array(size).fill('')],endSeats:['',''],mode:'group'});
+  }
   render();
 }
 
