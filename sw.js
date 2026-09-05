@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nomikai-seats-v2';
+const CACHE_NAME = 'nomikai-seats-v3';
 const ASSETS = [
   './index.html',
   './manifest.json',
