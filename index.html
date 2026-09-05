@@ -21,18 +21,26 @@ body {
   transition: background 0.35s ease;
 }
 body.mode-group {
-  background: linear-gradient(160deg, #73c9ed 0%, #74b9df 42%, #476fbe 100%);
+  background: linear-gradient(160deg, #2f6f9f 0%, #255783 48%, #1b315e 100%);
+}
+body.mode-group .subtitle,
+body.mode-group label,
+body.mode-group .toggle-desc,
+body.mode-group .table-size,
+body.mode-group .pool-empty,
+body.mode-group .seat-empty {
+  color: rgba(255,255,255,0.72);
 }
 body.mode-nomikai {
   background: radial-gradient(circle at 18% 0%, #58315e 0%, transparent 32%), linear-gradient(150deg, #090b20 0%, #1a1736 52%, #331b38 100%);
 }
 body.mode-group .panel, body.mode-group .table-card {
-  background: rgba(255,255,255,0.16);
-  border-color: rgba(255,255,255,0.30);
+  background: rgba(9,42,82,0.28);
+  border-color: rgba(255,255,255,0.38);
   box-shadow: 0 8px 24px rgba(23,78,136,0.13);
 }
-body.mode-group .mode-tabs { background: rgba(255,255,255,0.21); }
-body.mode-group .pool { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.34); }
+body.mode-group .mode-tabs { background: rgba(8,37,75,0.30); }
+body.mode-group .pool { background: rgba(8,37,75,0.16); border-color: rgba(255,255,255,0.40); }
 body.mode-group .table-surface { background: linear-gradient(135deg,#8d5e39,#5a321f); }
 body.mode-nomikai .panel, body.mode-nomikai .table-card { box-shadow: 0 10px 28px rgba(0,0,0,0.22); }
 .mode-tabs { display:flex; gap:8px; margin-bottom:20px; background:rgba(255,255,255,0.06); border-radius:14px; padding:5px; }
