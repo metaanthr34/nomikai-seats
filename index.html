@@ -66,11 +66,12 @@ input:checked + .toggle-slider:before { transform:translateX(22px); }
 .table-name.group-style { background:linear-gradient(135deg,#48DBFB,#5F27CD); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .table-size { font-size:11px; color:rgba(255,255,255,0.4); font-family:monospace; }
 .table-del { margin-left:auto; background:#FF6B6B; border:none; border-radius:50%; width:24px; height:24px; color:#fff; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.table-layout { display:flex; flex-direction:column; gap:6px; min-width:fit-content; }
-.table-middle-row { display:flex; align-items:center; gap:6px; justify-content:center; flex-wrap:nowrap; }
-.table-surface { background:linear-gradient(135deg,rgba(139,90,43,0.6),rgba(101,67,33,0.8)); border-radius:8px; height:58px; flex:1; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1); font-size:10px; color:rgba(255,255,255,0.4); letter-spacing:2px; min-width:60px; }
+.dining-table { display:flex; align-items:center; justify-content:center; gap:8px; min-width:max-content; margin:0 auto; padding:4px 0; }
+.table-layout { display:flex; flex-direction:column; gap:8px; flex:0 0 auto; }
+.table-middle-row { display:block; }
+.table-surface { width:100%; height:48px; min-width:0; display:flex; align-items:center; justify-content:center; border-radius:12px; border:1px solid rgba(255,223,155,0.3); background:linear-gradient(135deg,#85502d,#4b281c); box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),0 7px 18px rgba(0,0,0,0.22); font-size:9px; color:rgba(255,232,190,0.65); letter-spacing:3px; }
 .seats-row { display:flex; gap:6px; justify-content:center; flex-wrap:nowrap; }
-.seat-end { width:52px; height:58px; border-radius:10px; border:2px dashed rgba(255,215,0,0.5); background:rgba(255,215,0,0.05); display:flex; align-items:center; justify-content:center; position:relative; transition:all 0.18s; cursor:default; user-select:none; box-shadow:0 0 10px rgba(255,215,0,0.2); flex-shrink:0; margin:0 8px; }
+.seat-end { width:44px; height:50px; border-radius:12px; border:2px dashed rgba(255,215,0,0.62); background:rgba(255,215,0,0.07); display:flex; align-items:center; justify-content:center; position:relative; transition:all 0.18s; cursor:default; user-select:none; box-shadow:0 0 12px rgba(255,215,0,0.18); flex-shrink:0; }
 .seat-end.occupied { border:2px solid rgba(255,215,0,0.7); box-shadow:0 0 14px rgba(255,215,0,0.4); cursor:grab; }
 .seat-end.drag-over { border-color:#FFD700; background:rgba(255,215,0,0.2); transform:scale(1.05); }
 .end-crown { position:absolute; top:-10px; left:50%; transform:translateX(-50%); font-size:12px; }
@@ -152,7 +153,7 @@ const COLORS=["#FF6B6B","#FF9F43","#FECA57","#1DD1A1","#48DBFB","#54A0FF","#FF9F
 const nameColorMap={};let colorUsageCount=Array(COLORS.length).fill(0);
 function getColor(n){if(nameColorMap[n])return nameColorMap[n];let m=Infinity,mi=0;for(let i=0;i<COLORS.length;i++)if(colorUsageCount[i]<m){m=colorUsageCount[i];mi=i;}colorUsageCount[mi]++;nameColorMap[n]=COLORS[mi];return COLORS[mi];}
 function releaseColor(n){if(!nameColorMap[n])return;const i=COLORS.indexOf(nameColorMap[n]);if(i>=0)colorUsageCount[i]=Math.max(0,colorUsageCount[i]-1);delete nameColorMap[n];}
-function birthdayOn(){return currentMode==='nomikai'&&document.getElementById('birthdayToggle').checked;}
+function birthdayOn(){return document.getElementById('birthdayToggle').checked;}
 
 function setMode(mode){
   currentMode=mode;
@@ -345,7 +346,9 @@ function renderTables(){
       card.appendChild(g);
     } else {
       const ss=calcSeatSize(cols);
-      const layout=document.createElement('div');layout.className='table-layout';
+      const tableWidth=cols*ss+(cols-1)*6;
+      const dining=document.createElement('div');dining.className='dining-table';
+      const layout=document.createElement('div');layout.className='table-layout';layout.style.width=tableWidth+'px';
       const topRow=document.createElement('div');topRow.className='seats-row';
       for(let c=0;c<cols;c++)topRow.appendChild(makeSeat(t,ti,0,c,ss));
       layout.appendChild(topRow);
@@ -355,17 +358,17 @@ function renderTables(){
         layout.appendChild(row);
       }
       const midRow=document.createElement('div');midRow.className='table-middle-row';
-      if(birthdayOn())midRow.appendChild(makeEndSeat(t,ti,0));
       const surf=document.createElement('div');surf.className='table-surface';surf.textContent='TABLE';
-      midRow.appendChild(surf);
-      if(birthdayOn())midRow.appendChild(makeEndSeat(t,ti,1));
-      layout.appendChild(midRow);
+      midRow.appendChild(surf);layout.appendChild(midRow);
       if(rows>=2){
         const botRow=document.createElement('div');botRow.className='seats-row';
         for(let c=0;c<cols;c++)botRow.appendChild(makeSeat(t,ti,rows-1,c,ss));
         layout.appendChild(botRow);
       }
-      card.appendChild(layout);
+      if(birthdayOn())dining.appendChild(makeEndSeat(t,ti,0));
+      dining.appendChild(layout);
+      if(birthdayOn())dining.appendChild(makeEndSeat(t,ti,1));
+      card.appendChild(dining);
     }
     area.appendChild(card);
   });
@@ -373,8 +376,8 @@ function renderTables(){
 function calcSeatSize(cols){
   // カード内の利用可能幅を推定（画面幅 - padding*2 - card padding*2）
   const available = Math.min(window.innerWidth, 600) - 24 - 32;
-  // 端席がある場合は2席分(52px*2+gap*2)引く
-  const endW = birthdayOn() ? (52*2 + 6*2) : 0;
+  // 端席がある場合は、席本体の幅を先に確保して左右に独立配置する
+  const endW = birthdayOn() ? (44*2 + 16) : 0;
   const gapTotal = (cols - 1) * 6;
   const maxW = Math.floor((available - endW - gapTotal) / cols);
   // 最小44px、最大72px
